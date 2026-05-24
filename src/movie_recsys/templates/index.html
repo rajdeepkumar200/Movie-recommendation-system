@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Recommender</title>
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --bg-light: #181818;
+      --bg-card: #1c1c1c;
+      --bg-hover: #2a2a2a;
+      --text: #e5e5e5;
+      --text-dim: #999;
+      --accent: #e50914;
+      --accent-hover: #f6121d;
+      --gold: #f5c518;
+      --green: #46d369;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ---------------- header ---------------- */
+    header {
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      padding: 1rem 2rem;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 100%);
+      position: sticky; top: 0; z-index: 100; backdrop-filter: blur(6px);
+    }
+    .logo { color: var(--accent); font-size: 1.6rem; font-weight: 900; letter-spacing: -1px; }
+    .search-box {
+      flex: 1; max-width: 420px; min-width: 200px;
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--bg-card); border-radius: var(--radius);
+      padding: 0.45rem 0.8rem; border: 1px solid #2a2a2a;
+    }
+    .search-box input {
+      background: transparent; border: none; color: var(--text);
+      font-size: 0.95rem; outline: none; width: 100%;
+    }
+    .search-box input::placeholder { color: var(--text-dim); }
+    select, .btn {
+      background: var(--bg-card); color: var(--text);
+      border: 1px solid #2a2a2a; border-radius: var(--radius);
+      padding: 0.45rem 0.8rem; font-size: 0.9rem; outline: none; cursor: pointer;
+    }
+    select:focus, .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ---------------- hero / banner ---------------- */
+    .hero {
+      padding: 3rem 2rem 2rem; max-width: 900px;
+    }
+    .hero h1 { font-size: 2.2rem; margin-bottom: 0.5rem; font-weight: 800; }
+    .hero p { color: var(--text-dim); font-size: 1rem; line-height: 1.5; margin-bottom: 1.2rem; }
+    .hero .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    /* ---------------- rows ---------------- */
+    .row { padding: 1rem 2rem 2rem; }
+    .row-title {
+      font-size: 1.25rem; font-weight: 700; margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .row-title .badge {
+      background: var(--accent); color: #fff; font-size: 0.65rem;
+      padding: 0.18rem 0.5rem; border-radius: 3px; text-transform: uppercase;
+      letter-spacing: 0.5px; font-weight: 700;
+    }
+    .row-title .count { color: var(--text-dim); font-size: 0.85rem; font-weight: 400; }
+    .slider {
+      display: flex; gap: 0.6rem;
+      overflow-x: auto; scroll-behavior: smooth;
+      padding-bottom: 0.6rem;
+      scrollbar-width: thin;
+    }
+    .slider::-webkit-scrollbar { height: 6px; }
+    .slider::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+    /* ---------------- card ---------------- */
+    .card {
+      flex: 0 0 auto; width: 168px; position: relative;
+      border-radius: var(--radius); overflow: hidden;
+      background: var(--bg-card); cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.06); z-index: 10;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+    }
+    .poster {
+      width: 168px; height: 252px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      font-size: 2.5rem; font-weight: 800; color: rgba(255,255,255,0.18);
+      overflow: hidden;
+    }
+    .poster img {
+      width: 100%; height: 100%; object-fit: cover;
+      opacity: 0; transition: opacity 0.4s;
+    }
+    .poster img.loaded { opacity: 1; }
+    .poster-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.6rem; pointer-events: none;
+      background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+      display: flex; justify-content: space-between; align-items: flex-end;
+    }
+    .poster-overlay .score {
+      color: var(--green); font-size: 0.82rem; font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .like-btn {
+      position: absolute; top: 0.4rem; right: 0.4rem; z-index: 5;
+      background: rgba(0,0,0,0.6); border: none; color: #fff;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; opacity: 0; transition: opacity 0.2s, background 0.2s;
+    }
+    .card:hover .like-btn { opacity: 1; }
+    .like-btn.liked { opacity: 1; background: var(--accent); }
+    .like-btn:hover { background: var(--accent); }
+    .card-info { padding: 0.5rem 0.6rem 0.7rem; }
+    .card-title {
+      font-size: 0.85rem; font-weight: 600; line-height: 1.2;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; margin-bottom: 0.3rem; min-height: 2.05em;
+    }
+    .card-meta {
+      font-size: 0.7rem; color: var(--text-dim);
+      display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;
+    }
+    .genre-tag {
+      background: rgba(255,255,255,0.08); padding: 0.1rem 0.35rem;
+      border-radius: 3px; font-size: 0.65rem;
+    }
+    .empty { color: var(--text-dim); font-size: 0.95rem; padding: 1rem 0; }
+    .loading { color: var(--text-dim); padding: 2rem; text-align: center; }
+    .section-divider { border: none; border-top: 1px solid #1f1f1f; margin: 0 2rem; }
+
+    /* ---------------- onboarding modal ---------------- */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      z-index: 200; display: none; overflow-y: auto;
+    }
+    .modal-backdrop.open { display: block; }
+    .modal {
+      max-width: 1100px; margin: 3rem auto; padding: 2rem;
+      background: var(--bg-light); border-radius: 10px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    }
+    .modal h2 { margin-bottom: 0.4rem; font-size: 1.6rem; }
+    .modal p { color: var(--text-dim); margin-bottom: 1.2rem; line-height: 1.5; }
+    .modal-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.6rem; margin-bottom: 1.2rem;
+    }
+    .pick-card {
+      position: relative; border-radius: var(--radius); overflow: hidden;
+      cursor: pointer; background: var(--bg-card);
+      border: 2px solid transparent; transition: all 0.15s;
+    }
+    .pick-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 20px rgba(229,9,20,0.4);
+    }
+    .pick-card.selected::after {
+      content: '\2713'; position: absolute; top: 0.4rem; right: 0.4rem;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; z-index: 5;
+    }
+    .pick-card .poster { width: 100%; height: 220px; }
+    .pick-card .card-info { padding: 0.4rem 0.5rem 0.6rem; }
+    .pick-card .card-title { font-size: 0.78rem; min-height: auto; }
+    .modal-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 1rem; border-top: 1px solid #2a2a2a;
+    }
+    .modal-footer .picked-count { color: var(--text-dim); }
+    .modal-footer .picked-count strong { color: var(--text); }
+    .modal-actions { display: flex; gap: 0.6rem; }
+
+    /* ---------------- user badge ---------------- */
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--bg-card); border: 1px solid #2a2a2a;
+      padding: 0.3rem 0.6rem 0.3rem 0.3rem; border-radius: 999px;
+      font-size: 0.9rem;
+    }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7a040a);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.85rem; color: #fff;
+      text-transform: uppercase;
+    }
+    .uname { font-weight: 600; }
+    .btn-link {
+      background: transparent; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: 0.8rem; padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+    }
+    .btn-link:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+    /* ---------------- login modal ---------------- */
+    .login-modal { max-width: 480px; padding: 2.2rem 2rem; }
+    .login-modal h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+    .login-modal p { color: var(--text-dim); margin-bottom: 1.3rem; line-height: 1.5; }
+    .login-form { display: flex; flex-direction: column; gap: 0.8rem; }
+    .login-form input {
+      background: var(--bg-card); color: var(--text);
+      border: 1px solid #2a2a2a; border-radius: var(--radius);
+      padding: 0.7rem 0.9rem; font-size: 1rem; outline: none;
+      font-family: inherit;
+    }
+    .login-form input:focus { border-color: var(--accent); }
+    .login-form .hint {
+      font-size: 0.78rem; color: var(--text-dim);
+    }
+    .login-form .err {
+      font-size: 0.85rem; color: #ff6b6b; min-height: 1.2em;
+    }
+    .login-form button { padding: 0.7rem; font-size: 1rem; }
+
+    /* genre-themed fallback gradients */
+    .poster[data-genre="Action"]      { background: linear-gradient(135deg, #2d1b1b, #5c2828); }
+    .poster[data-genre="Comedy"]      { background: linear-gradient(135deg, #2d2a1b, #5c5028); }
+    .poster[data-genre="Drama"]       { background: linear-gradient(135deg, #1b2d2d, #285c5c); }
+    .poster[data-genre="Horror"]      { background: linear-gradient(135deg, #1b1b2d, #28285c); }
+    .poster[data-genre="Romance"]     { background: linear-gradient(135deg, #2d1b2d, #5c285c); }
+    .poster[data-genre="SciFi"]       { background: linear-gradient(135deg, #1b2d1b, #285c28); }
+    .poster[data-genre="Thriller"]    { background: linear-gradient(135deg, #2d251b, #5c4a28); }
+    .poster[data-genre="Animation"]   { background: linear-gradient(135deg, #2d2d1b, #5c5c28); }
+    .poster[data-genre="Adventure"]   { background: linear-gradient(135deg, #1b2d2d, #285c5c); }
+    .poster[data-genre="Crime"]       { background: linear-gradient(135deg, #1b1b2d, #28285c); }
+    .poster[data-genre="Documentary"] { background: linear-gradient(135deg, #1b2d1b, #285c28); }
+    .poster[data-genre="Children"]    { background: linear-gradient(135deg, #2d2516, #5c4a28); }
+    .poster[data-genre="Musical"]     { background: linear-gradient(135deg, #2d1b30, #5c2860); }
+    .poster[data-genre="Mystery"]     { background: linear-gradient(135deg, #1b1f2d, #28365c); }
+    .poster[data-genre="War"]         { background: linear-gradient(135deg, #261b1b, #4f2828); }
+    .poster[data-genre="Western"]     { background: linear-gradient(135deg, #2d251b, #5c4628); }
+    .poster[data-genre="Fantasy"]     { background: linear-gradient(135deg, #251b2d, #4a285c); }
+    .poster[data-genre="FilmNoir"]    { background: linear-gradient(135deg, #161616, #303030); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">RECOMMENDER</div>
+    <div class="search-box">
+      <span>&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Search movies..." autocomplete="off">
+    </div>
+    <select id="genreSelect" title="Filter by genre">
+      <option value="">All Genres</option>
+    </select>
+    <div class="user-badge" id="userBadge" style="display:none">
+      <span class="avatar" id="userAvatar"></span>
+      <span class="uname" id="userName"></span>
+      <button class="btn-link" id="signOutBtn" title="Switch user">Switch</button>
+    </div>
+    <button class="btn btn-primary" id="onboardBtn">Pick favorites</button>
+  </header>
+
+  <div id="hero" class="hero" style="display:none">
+    <h1>Welcome, <span id="heroName">friend</span>.</h1>
+    <p>Click <strong>Pick favorites</strong> to tell us movies you've enjoyed, or click the heart on any card. We'll remember your taste so the recommendations get better every time you visit.</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="heroOnboard">Pick movies you like &rarr;</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="loading">Loading...</div>
+  </div>
+
+  <!-- Onboarding modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h2>What movies do you like?</h2>
+      <p>Click at least <strong>3</strong> movies you've enjoyed - we'll use them to recommend more like them. Filter by genre if you want.</p>
+      <div style="display:flex; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <select id="onboardGenre">
+          <option value="">All genres</option>
+        </select>
+        <input type="text" id="onboardSearch" class="btn" placeholder="Search title..." style="flex:1; min-width:200px;">
+      </div>
+      <div class="modal-grid" id="onboardGrid"></div>
+      <div class="modal-footer">
+        <div class="picked-count">
+          <strong id="pickedCount">0</strong> selected
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="onboardCancel">Cancel</button>
+          <button class="btn btn-primary" id="onboardSubmit" disabled>Save & get recommendations</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login modal -->
+  <div class="modal-backdrop" id="loginBackdrop">
+    <div class="modal login-modal">
+      <h2>Who's watching?</h2>
+      <p>Enter a username so we can remember the movies you like. Existing username? Type it again to pick up where you left off.</p>
+      <form class="login-form" id="loginForm" autocomplete="off">
+        <input type="text" id="loginInput" placeholder="e.g. alice or your_name" maxlength="20" required autofocus>
+        <div class="hint">3-20 characters, lowercase letters, digits, underscore.</div>
+        <div class="err" id="loginErr"></div>
+        <button class="btn btn-primary" type="submit">Continue &rarr;</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const app = $('app');
+    const hero = $('hero');
+    const genreSelect = $('genreSelect');
+    const searchInput = $('searchInput');
+    const modal = $('modal');
+    const onboardGrid = $('onboardGrid');
+    const onboardGenre = $('onboardGenre');
+    const onboardSearch = $('onboardSearch');
+    const pickedCount = $('pickedCount');
+    const onboardSubmit = $('onboardSubmit');
+    const loginBackdrop = $('loginBackdrop');
+    const loginForm = $('loginForm');
+    const loginInput = $('loginInput');
+    const loginErr = $('loginErr');
+    const userBadge = $('userBadge');
+    const userAvatar = $('userAvatar');
+    const userName = $('userName');
+    const heroName = $('heroName');
+
+    const STORAGE_KEY = 'recommender.username';
+
+    let genres = [];
+    let username = null;
+    let liked = new Set();           // ids this user has liked (mirrors backend)
+    let currentGenre = '';
+    let searchQuery = '';
+    let recs = [];                   // cached recommendations
+
+    async function fetchJSON(url, opts) {
+      const r = await fetch(url, opts);
+      if (!r.ok) {
+        let msg = r.statusText;
+        try { msg = (await r.json()).error || msg; } catch {}
+        throw new Error(msg);
+      }
+      return r.json();
+    }
+
+    function initials(title) {
+      const cleaned = title.replace(/\(.*?\)/g, '').replace(/[,:].*$/, '').trim();
+      const words = cleaned.split(/\s+/).filter(w => w.length > 1 && !/^(the|a|an|of|and|in|on|le|la|les|de|du)$/i.test(w));
+      return words.slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
+    }
+
+    function posterGenre(g) {
+      const order = ['Action','SciFi','Horror','Thriller','Crime','Mystery','War','Romance','Comedy','Drama','Adventure','Animation','Children','Documentary','Musical','Western','Fantasy','FilmNoir'];
+      for (const x of order) if (g.includes(x)) return x;
+      return g[0] || 'Drama';
+    }
+
+    function cardHTML(m, opts={}) {
+      const pg = posterGenre(m.genres);
+      const tags = m.genres.slice(0, 3).map(g => `<span class="genre-tag">${g}</span>`).join('');
+      const score = m.predicted_rating != null
+        ? `<span class="score">${m.predicted_rating.toFixed(2)} &#9733;</span>` : '';
+      const likeBtn = opts.showLike
+        ? `<button class="like-btn ${liked.has(m.id) ? 'liked' : ''}" data-like="${m.id}" title="${liked.has(m.id) ? 'Liked' : 'Like'}">${liked.has(m.id) ? '\u2665' : '\u2661'}</button>`
+        : '';
+      return `
+        <div class="card" data-id="${m.id}">
+          ${likeBtn}
+          <div class="poster" data-genre="${pg}" data-poster-id="${m.id}">
+            <span class="initials">${initials(m.title)}</span>
+            <img alt="" data-src="${m.id}" loading="lazy">
+            <div class="poster-overlay">${score}</div>
+          </div>
+          <div class="card-info">
+            <div class="card-title">${m.title}</div>
+            <div class="card-meta">${m.year ? '<span>' + m.year + '</span> &bull; ' : ''}${tags}</div>
+          </div>
+        </div>`;
+    }
+
+    function pickCardHTML(m) {
+      const pg = posterGenre(m.genres);
+      return `
+        <div class="pick-card ${liked.has(m.id) ? 'selected' : ''}" data-pick="${m.id}">
+          <div class="poster" data-genre="${pg}" data-poster-id="${m.id}">
+            <span class="initials">${initials(m.title)}</span>
+            <img alt="" data-src="${m.id}" loading="lazy">
+          </div>
+          <div class="card-info">
+            <div class="card-title">${m.title}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderSlider(title, movies, badge) {
+      if (!movies || !movies.length) return '';
+      const cards = movies.map(m => cardHTML(m, { showLike: true })).join('');
+      const count = movies.length >= 20 ? '' : `<span class="count">(${movies.length})</span>`;
+      return `
+        <div class="row">
+          <div class="row-title">
+            ${title}
+            ${badge ? `<span class="badge">${badge}</span>` : ''}
+            ${count}
+          </div>
+          <div class="slider">${cards}</div>
+        </div>`;
+    }
+
+    // Lazy-load posters as they scroll into view. rootMargin: 300px so
+    // they start loading just before they're actually visible.
+    const posterObserver = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const img = e.target;
+        const id = img.dataset.src;
+        if (!id) continue;
+        posterObserver.unobserve(img);
+        img.onload = () => img.classList.add('loaded');
+        img.onerror = () => { /* fall back to the stylized card */ };
+        img.src = `/api/img/${id}`;
+      }
+    }, { rootMargin: '300px' });
+
+    function observePosters() {
+      document.querySelectorAll('img[data-src]').forEach(img => {
+        if (!img.src) posterObserver.observe(img);
+      });
+    }
+
+    // ---- profile / login
+    function setUserUI(name) {
+      username = name;
+      if (name) {
+        localStorage.setItem(STORAGE_KEY, name);
+        userBadge.style.display = 'inline-flex';
+        userAvatar.textContent = name.slice(0, 1);
+        userName.textContent = name;
+        heroName.textContent = name;
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+        userBadge.style.display = 'none';
+      }
+    }
+
+    function openLogin() {
+      loginErr.textContent = '';
+      loginInput.value = '';
+      loginBackdrop.classList.add('open');
+      setTimeout(() => loginInput.focus(), 50);
+    }
+    function closeLogin() { loginBackdrop.classList.remove('open'); }
+
+    async function loginWith(name) {
+      const norm = (name || '').trim().toLowerCase();
+      if (!/^[a-z0-9_]{3,20}$/.test(norm)) {
+        loginErr.textContent = 'Use 3-20 lowercase letters, digits, or underscore.';
+        return false;
+      }
+      try {
+        const res = await fetchJSON(`/api/profile/${encodeURIComponent(norm)}`);
+        const prof = res.profile;
+        liked = new Set((prof.liked || []).map(Number));
+        setUserUI(norm);
+        closeLogin();
+        await refreshRecs();
+        await refreshView();
+        return true;
+      } catch (e) {
+        loginErr.textContent = 'Error: ' + e.message;
+        return false;
+      }
+    }
+
+    async function refreshRecs() {
+      if (!username || liked.size === 0) { recs = []; return; }
+      try {
+        recs = await fetchJSON(`/api/profile/${encodeURIComponent(username)}/recommend?top=20${currentGenre ? '&genre=' + encodeURIComponent(currentGenre) : ''}`);
+      } catch (e) { recs = []; }
+    }
+
+    // ---- main view
+    async function loadAll() {
+      genres = await fetchJSON('/api/genres');
+      const goodGenres = genres.filter(g => g !== 'unknown');
+      genreSelect.innerHTML = '<option value="">All Genres</option>' + goodGenres.map(g => `<option value="${g}">${g}</option>`).join('');
+      onboardGenre.innerHTML = '<option value="">All genres</option>' + goodGenres.map(g => `<option value="${g}">${g}</option>`).join('');
+
+      // If we've seen this browser before, just sign them back in.
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const ok = await loginWith(saved);
+        if (!ok) openLogin();
+      } else {
+        hero.style.display = 'block';
+        await refreshView();
+        openLogin();
+      }
+    }
+
+    async function refreshView() {
+      app.innerHTML = '<div class="loading">Loading movies...</div>';
+      try {
+        const params = new URLSearchParams();
+        if (currentGenre) params.set('genre', currentGenre);
+        if (searchQuery) params.set('q', searchQuery);
+        params.set('limit', '60');
+        const movies = await fetchJSON('/api/movies?' + params.toString());
+
+        hero.style.display = username && liked.size >= 3 ? 'none' : 'block';
+
+        let html = '';
+
+        if (recs && recs.length) {
+          html += renderSlider('Recommended for you', recs.slice(0, 20), `For ${username}`);
+          html += '<hr class="section-divider">';
+        } else if (username && liked.size > 0 && liked.size < 3) {
+          html += `<div class="row"><div class="empty">Like ${3 - liked.size} more movie${liked.size === 2 ? '' : 's'} (or click <strong>Pick favorites</strong>) to unlock personalized recommendations.</div></div>`;
+        }
+
+        if (username && liked.size > 0) {
+          const likedMovies = await fetchJSON(`/api/profile/${encodeURIComponent(username)}/likes`);
+          if (likedMovies.length) html += renderSlider('Your liked movies', likedMovies);
+          html += '<hr class="section-divider">';
+        }
+
+        // Catalog rows
+        if (!currentGenre && !searchQuery) {
+          for (const g of ['Action','Comedy','Drama','SciFi','Thriller','Romance','Adventure','Animation']) {
+            const gm = movies.filter(m => m.genres.includes(g));
+            if (gm.length) html += renderSlider(g, gm.slice(0, 18));
+          }
+        } else {
+          html += renderSlider(currentGenre || 'Search results: "' + searchQuery + '"', movies.slice(0, 40));
+        }
+
+        if (!html) html = '<div class="row"><div class="empty">No movies found.</div></div>';
+        app.innerHTML = html;
+        observePosters();
+      } catch (e) {
+        app.innerHTML = `<div class="row"><div class="empty">Error: ${e.message}</div></div>`;
+      }
+    }
+
+    // ---- like buttons
+    async function toggleLike(id) {
+      if (!username) { openLogin(); return; }
+      // Flip locally first so the heart updates instantly.
+      const wasLiked = liked.has(id);
+      if (wasLiked) liked.delete(id); else liked.add(id);
+      try {
+        const res = await fetchJSON(`/api/profile/${encodeURIComponent(username)}/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_id: id }),
+        });
+        liked = new Set((res.profile.liked || []).map(Number));
+      } catch (e) {
+        // Server said no - undo the local change.
+        if (wasLiked) liked.add(id); else liked.delete(id);
+        return;
+      }
+      // Need at least 3 likes before the cold-start trick gives sane recs.
+      if (liked.size >= 3) await refreshRecs();
+      await refreshView();
+    }
+
+    document.addEventListener('click', async (e) => {
+      const likeEl = e.target.closest('[data-like]');
+      if (likeEl) {
+        e.stopPropagation();
+        const id = Number(likeEl.dataset.like);
+        // Flip the heart immediately, don't wait for the request.
+        likeEl.classList.toggle('liked');
+        likeEl.textContent = likeEl.classList.contains('liked') ? '\u2665' : '\u2661';
+        await toggleLike(id);
+        return;
+      }
+      const pickEl = e.target.closest('[data-pick]');
+      if (pickEl) {
+        const id = Number(pickEl.dataset.pick);
+        if (liked.has(id)) liked.delete(id); else liked.add(id);
+        pickEl.classList.toggle('selected');
+        pickedCount.textContent = liked.size;
+        onboardSubmit.disabled = liked.size < 3;
+      }
+    });
+
+    // ---- onboarding modal
+    let onboardMovies = [];
+    async function openOnboarding() {
+      modal.classList.add('open');
+      await loadOnboardingGrid();
+    }
+    function closeOnboarding() {
+      modal.classList.remove('open');
+    }
+    async function loadOnboardingGrid() {
+      onboardGrid.innerHTML = '<div class="loading">Loading popular titles...</div>';
+      const params = new URLSearchParams({ limit: '40' });
+      const g = onboardGenre.value;
+      const q = onboardSearch.value.trim();
+      if (g) params.set('genre', g);
+      const url = q
+        ? `/api/movies?q=${encodeURIComponent(q)}${g ? '&genre=' + encodeURIComponent(g) : ''}&limit=40`
+        : `/api/popular?${params.toString()}`;
+      onboardMovies = await fetchJSON(url);
+      onboardGrid.innerHTML = onboardMovies.map(pickCardHTML).join('');
+      pickedCount.textContent = liked.size;
+      onboardSubmit.disabled = liked.size < 3;
+      observePosters();
+    }
+
+    function requireLogin() {
+      if (!username) { openLogin(); return false; }
+      return true;
+    }
+
+    $('onboardBtn').addEventListener('click', () => { if (requireLogin()) openOnboarding(); });
+    $('heroOnboard').addEventListener('click', () => { if (requireLogin()) openOnboarding(); });
+    $('onboardCancel').addEventListener('click', closeOnboarding);
+    onboardGenre.addEventListener('change', loadOnboardingGrid);
+    let _searchT;
+    onboardSearch.addEventListener('input', () => {
+      clearTimeout(_searchT);
+      _searchT = setTimeout(loadOnboardingGrid, 250);
+    });
+    $('onboardSubmit').addEventListener('click', async () => {
+      if (!requireLogin()) return;
+      onboardSubmit.disabled = true;
+      onboardSubmit.textContent = 'Saving...';
+      try {
+        const res = await fetchJSON(`/api/profile/${encodeURIComponent(username)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ liked: [...liked] }),
+        });
+        liked = new Set((res.profile.liked || []).map(Number));
+      } finally {
+        onboardSubmit.textContent = 'Save & get recommendations';
+        onboardSubmit.disabled = false;
+      }
+      closeOnboarding();
+      await refreshRecs();
+      await refreshView();
+    });
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeOnboarding(); });
+
+    // ---- login form
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await loginWith(loginInput.value);
+    });
+    $('signOutBtn').addEventListener('click', () => {
+      setUserUI(null);
+      liked = new Set();
+      recs = [];
+      openLogin();
+      refreshView();
+    });
+
+    // ---- header controls
+    genreSelect.addEventListener('change', async () => {
+      currentGenre = genreSelect.value;
+      await refreshRecs();
+      refreshView();
+    });
+    let _mainT;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(_mainT);
+      _mainT = setTimeout(() => { searchQuery = searchInput.value.trim(); refreshView(); }, 250);
+    });
+
+    loadAll();
+  </script>
+</body>
+</html>
