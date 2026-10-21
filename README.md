@@ -1,123 +1,95 @@
-<!--
-  Project README. Sections roughly follow the order I'd want a recruiter
-  or a future-me to read them in: what is it, why does it exist, what
-  does it look like, then how to run / extend it.
--->
+<h1 align="center">🎬 Movie Recsys</h1>
 
-# Movie Recsys
+<p align="center"><b>A hybrid movie recommender (SVD++ + gradient-boosted stacker) on MovieLens 100K, served behind a Netflix-style web UI 🍿✨</b></p>
 
-> A hybrid movie recommender (SVD++ + gradient-boosted stacker) on the
-> MovieLens 100K dataset, served behind a Netflix-style web UI.
-
-[![python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-[![tests](https://img.shields.io/badge/tests-pytest-green)](#10-tests--coverage)
-[![license](https://img.shields.io/badge/license-MIT-lightgrey)](#12-contributing--license)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.9+" />
+  <img src="https://img.shields.io/badge/ML-SVD%2B%2B%20%2B%20GBM%20Stacker-purple?style=for-the-badge" alt="SVD++ + GBM Stacker" />
+  <img src="https://img.shields.io/badge/Web-Flask%203.x-black?style=for-the-badge&logo=flask&logoColor=white" alt="Flask 3.x" />
+  <img src="https://img.shields.io/badge/Dataset-MovieLens%20100K-orange?style=for-the-badge" alt="MovieLens 100K" />
+  <img src="https://img.shields.io/badge/Tests-pytest-green?style=for-the-badge&logo=pytest&logoColor=black" alt="pytest" />
+</p>
 
 ---
 
-## Table of contents
+## 📑 Table of Contents
 
-1. [Problem statement & motivation](#1-problem-statement--motivation)
-2. [Live demo / screenshots](#2-live-demo--screenshots)
-3. [Tech stack](#3-tech-stack)
-4. [Features](#4-features)
-5. [Architecture](#5-architecture)
-6. [Results](#6-results)
-7. [Getting started](#7-getting-started)
-8. [Environment variables](#8-environment-variables)
-9. [API reference](#9-api-reference)
-10. [Tests & coverage](#10-tests--coverage)
-11. [Roadmap & known issues](#11-roadmap--known-issues)
-12. [Contributing & license](#12-contributing--license)
-
----
-
-## 1. Problem statement & motivation
-
-Recommender systems are everywhere - Netflix, Spotify, Amazon - and the
-"give me top-N items for user U" task is a classic ML interview problem.
-The two textbook approaches each have a known weakness:
-
-- **Pure collaborative filtering** (matrix factorization, SVD++, etc.)
-  learns from user-item interactions only. It nails the
-  rating-prediction RMSE but has nothing to say about a brand new user
-  or a brand new item - the **cold-start problem**.
-- **Pure content-based** ranking uses item metadata (genres, cast,
-  popularity) and user demographics, but ignores the rich co-rating
-  signal that's actually doing most of the work on a dense dataset.
-
-This project builds a small **hybrid** that does both: SVD++ as the CF
-backbone, a gradient-boosted regressor on top of it as the supervised
-stacker, and a cold-start path that synthesises a pseudo-user vector
-from a handful of "movies I like" picks. Everything is trained on the
-public MovieLens 100K dataset (943 users, 1,682 movies, 100,000 ratings)
-so anyone can reproduce the numbers in a few minutes on a laptop.
-
-The web UI is there so the model is something you can actually *use*,
-not just a number in a notebook.
+- [📖 Problem Statement & Motivation](#problem-statement--motivation)
+- [🖼️ Live Demo & Screenshots](#live-demo--screenshots)
+- [🛠️ Tech Stack](#tech-stack)
+- [✨ Features](#features)
+- [🏗️ Architecture](#architecture)
+- [📊 Results](#results)
+- [⚙️ Prerequisites](#prerequisites)
+- [🚀 Getting Started](#getting-started)
+- [📂 Project Structure](#project-structure)
+- [🔐 Environment Variables](#environment-variables)
+- [📡 API Reference](#api-reference)
+- [🧪 Tests & Coverage](#tests--coverage)
+- [🗺️ Roadmap & Known Issues](#roadmap--known-issues)
+- [🤝 Contributing](#contributing)
+- [📄 License](#license)
+- [👨‍💻 Author](#author)
 
 ---
 
-## 2. Live demo / screenshots
+## 📖 Problem Statement & Motivation
 
-There's no public deployment - the dataset is small enough that running
-locally takes ~30 seconds end-to-end. After
-[Getting started](#7-getting-started), browse to
-<http://127.0.0.1:5000>. The flow is three screens:
+Recommender systems are everywhere — Netflix, Spotify, Amazon 📺🎵🛒 — and the "give me top-N items for user U" task is a classic ML interview problem. The two textbook approaches each have a known weakness:
 
-| 1. Sign in                              | 2. Pick favorites                          | 3. Personalized recs                  |
+- **Pure collaborative filtering** (matrix factorization, SVD++, etc.) learns from user-item interactions only. It nails the rating-prediction RMSE but has nothing to say about a brand new user or a brand new item — the **cold-start problem** 🥶.
+- **Pure content-based** ranking uses item metadata (genres, cast, popularity) and user demographics, but ignores the rich co-rating signal that's actually doing most of the work on a dense dataset.
+
+This project builds a small **hybrid** that does both 🤝: SVD++ as the CF backbone, a gradient-boosted regressor on top of it as the supervised stacker, and a cold-start path that synthesises a pseudo-user vector from a handful of "movies I like" picks. Everything is trained on the public MovieLens 100K dataset (943 users, 1,682 movies, 100,000 ratings) so anyone can reproduce the numbers in a few minutes on a laptop 💻.
+
+The web UI is there so the model is something you can actually *use*, not just a number in a notebook 🎉.
+
+---
+
+## 🖼️ Live Demo & Screenshots
+
+There's no public deployment — the dataset is small enough that running locally takes ~30 seconds end-to-end ⏱️. After [Getting Started](#getting-started), browse to <http://127.0.0.1:5000>. The flow is three screens:
+
+| 1. Sign in | 2. Pick favorites | 3. Personalized recs |
 |-----------------------------------------|--------------------------------------------|---------------------------------------|
-| ![sign-in](docs/screenshots/login.png)  | ![onboard](docs/screenshots/onboard.png)   | ![recs](docs/screenshots/recs.png)    |
-| The "Who's watching?" modal asks for a username so likes persist across sessions. | Pick 3+ movies you've enjoyed. Filter by genre or search by title. | Your likes pin to the top; the catalog re-ranks below them.            |
+| ![sign-in](docs/screenshots/login.png) | ![onboard](docs/screenshots/onboard.png) | ![recs](docs/screenshots/recs.png) |
+| The "Who's watching?" modal asks for a username so likes persist across sessions. 👋 | Pick 3+ movies you've enjoyed. Filter by genre or search by title. 🔍 | Your likes pin to the top; the catalog re-ranks below them. 🎯 |
 
 ---
 
-## 3. Tech stack
+## 🛠️ Tech Stack
 
-| Layer            | What I used                                                  |
+| Layer | What I used |
 |------------------|--------------------------------------------------------------|
-| ML / numerics    | `numpy`, `pandas`, `scipy`, `scikit-learn` (`HistGradientBoostingRegressor`) |
-| Web backend      | `Flask` 3.x, `requests`                                      |
-| Web frontend     | Vanilla HTML/CSS/JS - no framework, no build step           |
-| Persistence      | Plain JSON files under `data/profiles/`, `data/posters.json` |
-| Posters          | TMDB API (preferred) / Wikipedia API (fallback)              |
-| Tests            | `pytest`                                                      |
-| Dataset          | [MovieLens 100K](https://grouplens.org/datasets/movielens/100k/) (auto-downloaded on first run) |
+| 🧠 ML / numerics | `numpy`, `pandas`, `scipy`, `scikit-learn` (`HistGradientBoostingRegressor`) |
+| 🌐 Web backend | `Flask` 3.x, `requests` |
+| 🎨 Web frontend | Vanilla HTML/CSS/JS — no framework, no build step |
+| 💾 Persistence | Plain JSON files under `data/profiles/`, `data/posters.json` |
+| 🖼️ Posters | TMDB API (preferred) / Wikipedia API (fallback) |
+| 🧪 Tests | `pytest` |
+| 📊 Dataset | [MovieLens 100K](https://grouplens.org/datasets/movielens/100k/) (auto-downloaded on first run) |
 
-Pure Python 3.9+, no GPU, no Docker, no database. The only thing it'll
-download is the ~4 MB MovieLens zip and (optionally) some poster JPEGs.
-
----
-
-## 4. Features
-
-- **Hybrid recommender** = `alpha * SVD++ + (1 - alpha) * GBM` over
-  user demographics, genre flags, popularity priors, and the CF
-  prediction itself (stacking signal). `alpha` is a CLI flag.
-- **Two collaborative backends**: biased matrix factorization
-  (`MatrixFactorization`) and SVD++ (`SVDpp`). Pick with `--cf-model`.
-- **Vectorized training**: SGD updates use `einsum` + `np.add.at`
-  scatter-adds. Avoids the per-rating Python loop.
-- **Two ranking-eval protocols**:
-  - Full-catalog Precision@K / Recall@K via `argpartition` over the
-    dense `(U, I)` score matrix.
-  - Sampled-negatives (BPR / NCF-style) Precision@K / Recall@K with
-    99 random negatives per user.
-- **Reproducible**: deterministic seeds, CLI entrypoints, choice of
-  random or per-user temporal split.
-- **Cold-start onboarding**: the user picks 3+ movies they like, the
-  app averages those items' CF latent factors into a pseudo `p_u`, then
-  ranks the catalog. No retraining required.
-- **Per-user profiles**: username login, likes persisted to
-  `data/profiles/<name>.json`, recs survive a server restart.
-- **Poster proxy**: server-side TMDB / Wikipedia lookup with disk cache
-  (`data/poster_imgs/`) so the page doesn't re-fetch every reload.
-- **Pickle-cached model**: first run trains and caches; subsequent runs
-  load in <2 s.
+Pure Python 3.9+, no GPU, no Docker, no database 🐍. The only thing it'll download is the ~4 MB MovieLens zip and (optionally) some poster JPEGs.
 
 ---
 
-## 5. Architecture
+## ✨ Features
+
+- 🤖 **Hybrid recommender** = `alpha * SVD++ + (1 - alpha) * GBM` over user demographics, genre flags, popularity priors, and the CF prediction itself (stacking signal). `alpha` is a CLI flag.
+- 🔀 **Two collaborative backends**: biased matrix factorization (`MatrixFactorization`) and SVD++ (`SVDpp`). Pick with `--cf-model`.
+- ⚡ **Vectorized training**: SGD updates use `einsum` + `np.add.at` scatter-adds. Avoids the per-rating Python loop.
+- 📏 **Two ranking-eval protocols**:
+  - Full-catalog Precision@K / Recall@K via `argpartition` over the dense `(U, I)` score matrix.
+  - Sampled-negatives (BPR / NCF-style) Precision@K / Recall@K with 99 random negatives per user.
+- 🔁 **Reproducible**: deterministic seeds, CLI entrypoints, choice of random or per-user temporal split.
+- 🥶 **Cold-start onboarding**: the user picks 3+ movies they like, the app averages those items' CF latent factors into a pseudo `p_u`, then ranks the catalog. No retraining required.
+- 👤 **Per-user profiles**: username login, likes persisted to `data/profiles/<name>.json`, recs survive a server restart.
+- 🖼️ **Poster proxy**: server-side TMDB / Wikipedia lookup with disk cache (`data/poster_imgs/`) so the page doesn't re-fetch every reload.
+- 💨 **Pickle-cached model**: first run trains and caches; subsequent runs load in <2 s.
+
+---
+
+## 🏗️ Architecture
 
 High-level flow from raw ratings to a recommendation in the UI:
 
@@ -129,32 +101,30 @@ High-level flow from raw ratings to a recommendation in the UI:
               ┌──────────────────┐      ┌──────────────────────┐
               │ data.py          │      │ build_user_features  │
               │ - download/load  │      │ build_item_features  │
-              │ - id remap       │      └──────────────────────┘
-              │ - train/test     │                  |
-              └────────┬─────────┘                  |
-                       |                            |
-                       v                            |
-              ┌──────────────────┐                  |
-              │ collaborative.py │                  |
-              │   MatrixFact.    │                  |
-              │       OR         │   ── cf_pred ──┐ |
-              │ svdpp.py         │                | |
-              │   SVD++          │                v v
-              └────────┬─────────┘            ┌────────────────┐
-                       |                      │ supervised.py  │
-                       |                      │ HistGradient   │
-                       |                      │ BoostingReg    │
-                       |                      └────────┬───────┘
-                       └────── alpha · CF + (1-α)·sup ─┘
+              │ - id remap       │      └──────────┬───────────┘
+              │ - train/test     │                 |
+              └────────┬─────────┘                 |
+                       |                           |
+                       v                           |
+              ┌──────────────────┐                 |
+              │ collaborative.py │                 |
+              │   MatrixFact.    │    ── cf_pred ──┐ |
+              │       OR         │                 | |
+              │ svdpp.py         │                 v v
+              │   SVD++          │          ┌──────────────┐
+              └────────┬─────────┘          │ supervised.py│
+                       |                    │ HistGradient │
+                       |                    │ BoostingReg  │
+                       └──── alpha · CF + (1-α)·sup ──┘
                                        |
                                        v
                               ┌────────────────────┐
                               │ hybrid.py          │
                               │ HybridRecommender  │
-                              └────────┬───────────┘
-                                       |
-                       ┌───────────────┼───────────────┐
-                       v               v               v
+                              └─────────┬──────────┘
+                                        |
+                       ┌────────────────┼────────────────┐
+                       v                v                v
               ┌─────────────┐  ┌──────────────┐ ┌─────────────────┐
               │ train.py    │  │ recommend.py │ │ web_app.py      │
               │ metrics +   │  │ top-N CLI    │ │ Flask + JSON    │
@@ -162,50 +132,44 @@ High-level flow from raw ratings to a recommendation in the UI:
               └─────────────┘  └──────────────┘ └─────────────────┘
 ```
 
-**Data path (web UI):** `browser` → `Flask` → cached `HybridRecommender`
-(or `cf.Q` directly for cold-start) → `numpy` → JSON → `browser`. Posters
-are proxied through `/api/img/<id>` so the browser only ever talks to
-our server.
+**Data path (web UI):** `browser` → `Flask` → cached `HybridRecommender` (or `cf.Q` directly for cold-start) → `numpy` → JSON → `browser`. Posters are proxied through `/api/img/<id>` so the browser only ever talks to our server 🌐.
 
 ---
 
-## 6. Results
+## 📊 Results
 
-MovieLens 100K, random 80/20 split, seed 42, defaults
-(`--factors 80 --epochs 30 --lr 0.005 --reg 0.05 --alpha 0.6`):
+MovieLens 100K, random 80/20 split, seed 42, defaults (`--factors 80 --epochs 30 --lr 0.005 --reg 0.05 --alpha 0.6`):
 
-| Metric                                       | Hybrid    |
+| Metric | Hybrid |
 |----------------------------------------------|-----------|
-| Train RMSE (SVD++)                           | 0.87      |
-| **Test RMSE**                                | **0.91**  |
-| Test MAE                                     | 0.71      |
-| Relevance accuracy @ 3.5                     | 72%       |
-| Precision@10 (full-catalog)                  | ~0.05     |
-| Precision@10 (sampled, 99 negatives, r ≥ 4)  | 0.30      |
-| Recall@10 (sampled)                          | 0.28      |
+| Train RMSE (SVD++) | 0.87 |
+| **Test RMSE** | **0.91** |
+| Test MAE | 0.71 |
+| Relevance accuracy @ 3.5 | 72% |
+| Precision@10 (full-catalog) | ~0.05 |
+| Precision@10 (sampled, 99 negatives, r ≥ 4) | 0.30 |
+| Recall@10 (sampled) | 0.28 |
 
-Vectorized vs naive ranking-eval loop on a 200-user subsample
-(`scripts/benchmark.py`):
+Vectorized vs naive ranking-eval loop on a 200-user subsample (`scripts/benchmark.py`):
 
-| Loop          | Time     |
+| Loop | Time |
 |---------------|----------|
-| Naive Python  | ~11 s    |
-| Vectorized    | ~0.02 s  |
+| 🐢 Naive Python | ~11 s |
+| 🚀 Vectorized | ~0.02 s |
 
-**A note on what the numbers mean.** Test RMSE around 0.91 is the
-realistic held-out number on a single 80/20 split; the often-quoted
-~0.88 SVD++ figure is a *training* RMSE / cross-validation number from
-the original Koren paper. The full-catalog Precision@10 looks low
-because the candidate set is ~1,500 items - the sampled-negatives
-protocol (1 positive + 99 random negatives) is the more flattering one
-that papers usually quote.
+**📌 A note on what the numbers mean.** Test RMSE around 0.91 is the realistic held-out number on a single 80/20 split; the often-quoted ~0.88 SVD++ figure is a *training* RMSE / cross-validation number from the original Koren paper. The full-catalog Precision@10 looks low because the candidate set is ~1,500 items — the sampled-negatives protocol (1 positive + 99 random negatives) is the more flattering one that papers usually quote.
 
 ---
 
-## 7. Getting started
+## ⚙️ Prerequisites
 
-Tested on Python 3.9+ on Windows (PowerShell), but should work the same
-on macOS / Linux.
+- 🐍 Python 3.9 or newer (tested on Windows / PowerShell, works the same on macOS / Linux)
+- 📦 pip — a virtual environment is recommended but not required
+- 🌐 Internet on first run only, to auto-download MovieLens 100K (~4 MB)
+
+---
+
+## 🚀 Getting Started
 
 ```powershell
 # 1. Install deps (a venv is recommended but not required).
@@ -227,39 +191,43 @@ python web.py
 # -> open http://127.0.0.1:5000
 ```
 
-### Project layout
+---
+
+## 📂 Project Structure
 
 ```
-src/movie_recsys/
-  data.py            # MovieLens loader + features + train/test splits
-  collaborative.py   # Biased MF with mini-batch SGD
-  svdpp.py           # SVD++ with implicit-feedback factors
-  supervised.py      # GBM regressor over hand-crafted features
-  hybrid.py          # alpha * CF + (1-alpha) * supervised
-  metrics.py         # RMSE / MAE / Precision@K / Recall@K
-  evaluate.py        # Full-catalog + sampled-negatives eval loops
-  recommend.py       # Top-N CLI
-  train.py           # Train + eval CLI
-  web_app.py         # Flask app
-  templates/
-    index.html       # Single-page UI (vanilla JS)
-scripts/
-  benchmark.py       # Naive vs vectorized eval timing
-tests/
-  test_metrics.py
-web.py / train.py / recommend.py / benchmark.py    # thin launchers
+Movie-recommendation-system/
+├── src/movie_recsys/
+│   ├── data.py            # 📥 MovieLens loader + features + train/test splits
+│   ├── collaborative.py   # 🔢 Biased MF with mini-batch SGD
+│   ├── svdpp.py           # ➕ SVD++ with implicit-feedback factors
+│   ├── supervised.py      # 🌲 GBM regressor over hand-crafted features
+│   ├── hybrid.py          # 🤝 alpha * CF + (1-alpha) * supervised
+│   ├── metrics.py         # 📏 RMSE / MAE / Precision@K / Recall@K
+│   ├── evaluate.py        # 🧪 Full-catalog + sampled-negatives eval loops
+│   ├── recommend.py       # 🎬 Top-N CLI
+│   ├── train.py           # 🏋️ Train + eval CLI
+│   ├── web_app.py         # 🌐 Flask app
+│   └── templates/
+│       └── index.html     # 🎨 Single-page UI (vanilla JS)
+├── scripts/
+│   └── benchmark.py       # ⏱️ Naive vs vectorized eval timing
+├── tests/
+│   └── test_metrics.py    # 🧪 Metrics tests
+├── web.py / train.py / recommend.py / benchmark.py    # 🚀 thin launchers
+├── requirements.txt
+└── pyproject.toml
 ```
 
 ---
 
-## 8. Environment variables
+## 🔐 Environment Variables
 
-The app reads exactly one env var. Both are optional - the only thing
-you'll lose without them is real movie posters.
+The app reads exactly one env var, and it's optional — the only thing you'll lose without it is real movie posters 🖼️.
 
-| Variable        | Default | What it does                                                                 |
+| Variable | Default | What it does |
 |-----------------|---------|------------------------------------------------------------------------------|
-| `TMDB_API_KEY`  | unset   | If set, posters are fetched from [TMDB](https://www.themoviedb.org/settings/api) (higher quality). If unset, the app falls back to Wikipedia, which works without a key. |
+| `TMDB_API_KEY` | unset | If set, posters are fetched from [TMDB](https://www.themoviedb.org/settings/api) (higher quality). If unset, the app falls back to Wikipedia, which works without a key. |
 
 ```powershell
 # Optional - only if you want TMDB posters.
@@ -267,14 +235,13 @@ $env:TMDB_API_KEY = "your-key-here"
 python web.py
 ```
 
-Cached posters live in `data/posters.json` (URLs) and
-`data/poster_imgs/` (bytes). Delete those if you want to re-fetch.
+Cached posters live in `data/posters.json` (URLs) and `data/poster_imgs/` (bytes). Delete those if you want to re-fetch 🗑️.
 
 ---
 
-## 9. API reference
+## 📡 API Reference
 
-### CLI
+### 🖥️ CLI
 
 ```powershell
 # train.py - the full training + eval pipeline
@@ -298,26 +265,25 @@ python recommend.py `
     --retrain                 # ignore cached model
 ```
 
-### HTTP
+### 🌐 HTTP
 
-All endpoints return JSON. `<name>` is a username matching
-`^[a-z0-9_]{3,20}$`.
+All endpoints return JSON. `<name>` is a username matching `^[a-z0-9_]{3,20}$`.
 
-| Method   | Path                              | Description                                                       |
+| Method | Path | Description |
 |----------|-----------------------------------|-------------------------------------------------------------------|
-| `GET`    | `/`                               | Single-page web UI (HTML).                                        |
-| `GET`    | `/api/genres`                     | List of genre names.                                              |
-| `GET`    | `/api/movies?q=&genre=&limit=`    | Search the catalog (popularity-sorted).                           |
-| `GET`    | `/api/popular?genre=&limit=`      | Popular titles (used by the onboarding picker).                   |
-| `POST`   | `/api/cold_recommend`             | Stateless cold-start. Body: `{liked: [int], top, genre}`.         |
-| `GET`    | `/api/img/<item_id>`              | Proxied poster bytes (with disk cache).                           |
-| `GET`    | `/api/profile/<name>`             | Load a profile, auto-creating it on first hit.                    |
-| `PUT`    | `/api/profile/<name>`             | Replace the liked list. Body: `{liked: [int]}`.                   |
-| `POST`   | `/api/profile/<name>/like`        | Toggle a single like. Body: `{item_id: int}`.                     |
-| `GET`    | `/api/profile/<name>/likes`       | This user's liked movies, with metadata.                          |
-| `GET`    | `/api/profile/<name>/recommend?top=&genre=` | Personalized cold-start top-N for this user.            |
+| `GET` | `/` | Single-page web UI (HTML). |
+| `GET` | `/api/genres` | List of genre names. |
+| `GET` | `/api/movies?q=&genre=&limit=` | Search the catalog (popularity-sorted). |
+| `GET` | `/api/popular?genre=&limit=` | Popular titles (used by the onboarding picker). |
+| `POST` | `/api/cold_recommend` | Stateless cold-start. Body: `{liked: [int], top, genre}`. |
+| `GET` | `/api/img/<item_id>` | Proxied poster bytes (with disk cache). |
+| `GET` | `/api/profile/<name>` | Load a profile, auto-creating it on first hit. |
+| `PUT` | `/api/profile/<name>` | Replace the liked list. Body: `{liked: [int]}`. |
+| `POST` | `/api/profile/<name>/like` | Toggle a single like. Body: `{item_id: int}`. |
+| `GET` | `/api/profile/<name>/likes` | This user's liked movies, with metadata. |
+| `GET` | `/api/profile/<name>/recommend?top=&genre=` | Personalized cold-start top-N for this user. |
 
-#### Quick sanity check
+#### ✅ Quick sanity check
 
 ```powershell
 $base = "http://127.0.0.1:5000"
@@ -330,72 +296,67 @@ Invoke-RestMethod "$base/api/profile/alice/recommend?top=5"
 
 ---
 
-## 10. Tests & coverage
+## 🧪 Tests & Coverage
 
 ```powershell
 pytest -q
 ```
 
-What's covered today:
+**✅ What's covered today:**
 
-- `tests/test_metrics.py` - RMSE, MAE, relevance accuracy,
-  Precision@K / Recall@K (including the train-mask path).
+- `tests/test_metrics.py` — RMSE, MAE, relevance accuracy, Precision@K / Recall@K (including the train-mask path).
 
-What's **not** covered (yet) - see [Roadmap](#11-roadmap--known-issues):
+**🚧 What's not covered (yet)** — see [Roadmap & Known Issues](#roadmap--known-issues):
 
-- The training loops (MF / SVD++) only have implicit coverage from
-  `train.py` running. I trust the convergence numbers as an integration
-  check, but there are no unit tests for the gradient math.
-- The Flask routes have no tests. Easy to add with Flask's
-  `app.test_client()` - just hasn't been a priority.
+- The training loops (MF / SVD++) only have implicit coverage from `train.py` running. I trust the convergence numbers as an integration check, but there are no unit tests for the gradient math.
+- The Flask routes have no tests. Easy to add with Flask's `app.test_client()` — just hasn't been a priority.
 - No coverage reporter wired in. `pytest-cov` would be a one-liner.
 
 ---
 
-## 11. Roadmap & known issues
+## 🗺️ Roadmap & Known Issues
 
-Things I'd add if I kept working on this:
+**🔮 Things I'd add if I kept working on this:**
 
-- **Real held-out evaluation harness.** Right now `train.py` reports
-  metrics on a single random split. A proper k-fold loop with mean ±
-  std would be more honest.
-- **Better cold-start.** Averaging item factors works, but a learned
-  cold-start head (e.g. predicting `p_u` from genre preferences) would
-  almost certainly do better.
-- **Two-tower / neural CF baseline** to compare against the linear
-  factor model. The repo's metrics infra is already protocol-compatible.
-- **API tests** with `app.test_client()` and a tmpdir-backed
-  `PROFILES_DIR`.
-- **Auth.** Profiles are keyed by a username with no password. This is
-  fine for a local demo, **not** for anything internet-facing.
+- **Real held-out evaluation harness.** Right now `train.py` reports metrics on a single random split. A proper k-fold loop with mean ± std would be more honest.
+- **Better cold-start.** Averaging item factors works, but a learned cold-start head (e.g. predicting `p_u` from genre preferences) would almost certainly do better.
+- **Two-tower / neural CF baseline** to compare against the linear factor model. The repo's metrics infra is already protocol-compatible.
+- **API tests** with `app.test_client()` and a tmpdir-backed `PROFILES_DIR`.
+- **Auth.** Profiles are keyed by a username with no password. This is fine for a local demo, **not** for anything internet-facing 🔒.
 
-Known issues:
+**🐛 Known issues:**
 
-- Wikipedia poster lookup occasionally returns a wrong image when the
-  movie title clashes with a more famous non-film page. The TMDB path
-  doesn't have this problem.
-- `predict_for_user` and `score_matrix` allocate a dense
-  `(|users|, n_items)` array. Fine for ML-100K (943 × 1682), would need
-  batching on a bigger dataset.
-- The web UI assumes a single Flask process - profile writes aren't
-  locked. Concurrent edits to the same `<name>.json` could race. Not a
-  concern at demo scale.
+- Wikipedia poster lookup occasionally returns a wrong image when the movie title clashes with a more famous non-film page. The TMDB path doesn't have this problem.
+- `predict_for_user` and `score_matrix` allocate a dense `(|users|, n_items)` array. Fine for ML-100K (943 × 1682), would need batching on a bigger dataset.
+- The web UI assumes a single Flask process — profile writes aren't locked. Concurrent edits to the same `<name>.json` could race. Not a concern at demo scale.
 
 ---
 
-## 12. Contributing & license
+## 🤝 Contributing
 
-Contributions are welcome - the codebase is small enough to read in an
-afternoon. Recommended workflow:
+Contributions are welcome — the codebase is small enough to read in an afternoon 😄. Recommended workflow:
 
-1. Fork and create a feature branch.
-2. Add or update a test under `tests/`.
-3. Run `pytest -q` locally before opening a PR.
-4. Keep the public API of `MatrixFactorization`, `SVDpp`,
-   `SupervisedRecommender`, and `HybridRecommender` stable - other
-   modules and the web app depend on it.
+1. Fork and create a feature branch 🌿
+2. Add or update a test under `tests/` 🧪
+3. Run `pytest -q` locally before opening a PR ✅
+4. Keep the public API of `MatrixFactorization`, `SVDpp`, `SupervisedRecommender`, and `HybridRecommender` stable — other modules and the web app depend on it 🔒
 
-Released under the **MIT License**. MovieLens 100K is © GroupLens
-Research and is governed by their own
-[terms of use](https://files.grouplens.org/datasets/movielens/ml-100k-README.txt) -
-the data isn't redistributed in this repo, it's downloaded on first run.
+---
+
+## 📄 License
+
+⚠️ No license file has been added to this repository yet — please contact the author before reusing the code.
+
+🎬 MovieLens 100K is © GroupLens Research and is governed by their own [terms of use](https://files.grouplens.org/datasets/movielens/ml-100k-README.txt) — the data isn't redistributed in this repo, it's downloaded on first run.
+
+---
+
+## 👨‍💻 Author
+
+**Rajdeep Kumar Singh** — AI/ML engineer into recommender systems and practical ML 🚀
+
+- 🐙 GitHub: [https://github.com/rajdeepkumar200](https://github.com/rajdeepkumar200)
+- 💼 LinkedIn: [https://www.linkedin.com/in/rajdeep-kumar-singh-ai](https://www.linkedin.com/in/rajdeep-kumar-singh-ai)
+- 🤗 Hugging Face: [https://huggingface.co/rajdeepkumar200](https://huggingface.co/rajdeepkumar200)
+
+⭐ If this helped you understand hybrid recommenders, a star is appreciated!
